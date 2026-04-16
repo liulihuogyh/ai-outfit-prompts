@@ -519,9 +519,9 @@ function generateTemplates() {
       STYLE_VARIANTS.forEach((style, vIdx) => {
         const outfit = OUTFIT_COMBOS[(gIdx + sIdx + vIdx) % OUTFIT_COMBOS.length];
         templates.push({
-          id: `tpl_${id}`,
-          name: `${group.icon} ${group.name}${sIdx+1}-${style.name}`,
-          desc: `${group.descs[sIdx]}/${style.name}`,
+          id: 'tpl_' + id,
+          name: group.icon + ' ' + group.name + (sIdx+1) + '-' + style.name,
+          desc: group.descs[sIdx] + '/' + style.name,
           icon: group.icon,
           s: {
             scene: [scene],
@@ -609,20 +609,24 @@ function clearAll() {
 // ================================================================
 function renderTemplates() {
   const el = document.getElementById('tplScroll');
-  // 只显示前50套（5个场景×10套），可滚动加载更多
-  const displayCount = Math.min(50, TEMPLATES.length);
-  el.innerHTML = TEMPLATES.slice(0, displayCount).map(t =>
+  const totalCount = TEMPLATES.length;
+  // 只显示前30套，可点击查看全部
+  const displayCount = Math.min(30, totalCount);
+  let html = TEMPLATES.slice(0, displayCount).map(t =>
     `<button class="tpl-card" onclick="loadTemplate(TEMPLATES.find(x=>x.id=='${t.id}'))" title="${t.desc}">
       <div class="tpl-icon">${t.icon}</div>
       <div class="tpl-name">${t.name}</div>
       <div class="tpl-desc">${t.desc}</div>
     </button>`
-  ).join('') + 
-  `<button class="tpl-card" onclick="showAllTemplates()" style="background:#f3f4f6;border-style:dashed">
+  ).join('');
+  
+  html += `<button class="tpl-card" onclick="showAllTemplates()" style="background:#f3f4f6;border-style:dashed;min-width:100px">
     <div class="tpl-icon">📋</div>
     <div class="tpl-name">查看全部</div>
-    <div class="tpl-desc">共${TEMPLATES.length}套模板</div>
+    <div class="tpl-desc">共` + totalCount + `套模板</div>
   </button>`;
+  
+  el.innerHTML = html;
 }
 
 // 显示全部500套模板（弹窗选择）
