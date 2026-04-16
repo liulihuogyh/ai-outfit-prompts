@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>AI穿搭提示词生成器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f9fafb;color:#1f2937;min-height:100vh;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:2px}
+
+/* === 头部 === */
+.header{background:linear-gradient(135deg,#f43f5e,#ec4899);color:#fff;padding:16px 16px 14px;box-shadow:0 2px 8px rgba(244,63,94,.35)}
+.header h1{font-size:17px;font-weight:700}
+.header p{font-size:12px;color:#fecdd3;margin-top:2px}
+
+/* === 主体 === */
+.main{max-width:480px;margin:0 auto;padding:12px 12px 100px}
+
+/* === 模板区 === */
+.section{margin-bottom:14px}
+.section-label{font-size:12px;color:#6b7280;font-weight:600;margin-bottom:8px;padding-left:2px}
+.tpl-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
+.tpl-scroll::-webkit-scrollbar{height:2px}
+.tpl-card{flex-shrink:0;min-width:120px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:10px 12px;cursor:pointer;transition:all .2s;text-align:left}
+.tpl-card:hover{border-color:#f43f5e;box-shadow:0 2px 8px rgba(244,63,94,.15)}
+.tpl-card .tpl-icon{font-size:15px}
+.tpl-card .tpl-name{font-size:13px;font-weight:600;color:#374151;margin-top:2px}
+.tpl-card .tpl-desc{font-size:11px;color:#9ca3af;margin-top:1px}
+
+/* === 标签栏 === */
+.tab-bar{position:sticky;top:0;z-index:10;background:#f9fafb;padding:8px 0;border-bottom:1px solid #e5e7eb;margin-bottom:10px}
+.tab-scroll{display:flex;gap:6px;overflow-x:auto}
+.tab-btn{display:flex-shrink:0;padding:6px 12px;border-radius:99px;font-size:12px;font-weight:600;transition:all .2s;cursor:pointer;border:none;background:#fff;color:#6b7280;border:1px solid #e5e7eb}
+.tab-btn.active{color:#fff;background:#f43f5e;border-color:#f43f5e}
+.tab-count{font-size:10px;margin-left:2px}
+
+/* === 内容卡片 === */
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+
+/* === 分类标题 === */
+.cat-header{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.cat-icon{font-size:11px;padding:2px 6px;border-radius:6px;font-weight:700;color:#fff}
+.cat-title{font-size:13px;font-weight:700}
+.cat-count{margin-left:auto;font-size:11px;color:#9ca3af}
+
+/* === 手风琴 === */
+.accordion-item{margin-bottom:6px}
+.accordion-title{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;cursor:pointer;transition:background .15s;user-select:none;background:#f3f4f6}
+.accordion-title:hover{background:#e5e7eb}
+.accordion-title .ai{font-size:13px}
+.accordion-title .an{font-size:12px;font-weight:600;color:#374151}
+.accordion-title .ac{margin-left:auto;font-size:11px;color:#9ca3af}
+.accordion-body{padding:8px 4px 4px;display:none;flex-wrap:wrap;gap:6px}
+.accordion-body.open{display:flex}
+
+/* === 芯片 === */
+.chip{padding:5px 11px;border-radius:99px;font-size:12px;border:1px solid #e5e7eb;background:#fff;color:#4b5563;cursor:pointer;transition:all .15s;white-space:nowrap}
+.chip:hover{border-color:#f9a8d4;color:#ec4899}
+.chip.selected{background:#f43f5e;color:#fff;border-color:#f43f5e}
+
+/* === 预览区 === */
+.preview-card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:12px}
+.preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.preview-title{font-size:13px;font-weight:700;color:#374151}
+.copy-btn{font-size:12px;color:#f43f5e;font-weight:600;background:none;border:none;cursor:pointer;padding:0}
+.copy-btn:active{color:#be123c}
+.preview-text{min-height:50px;font-size:13px;color:#6b7280;line-height:1.7}
+.preview-empty{color:#d1d5db;font-style:italic}
+.divider{border:none;border-top:1px solid #f3f4f6;margin:10px 0}
+.section-title{font-size:11px;color:#9ca3af;font-weight:600;margin-bottom:4px}
+.neg-text{font-size:11px;color:#9ca3af}
+
+/* === 底部操作栏 === */
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom));z-index:20;box-shadow:0 -2px 8px rgba(0,0,0,.06)}
+.btn-row{display:flex;gap:10px;max-width:480px;margin:0 auto}
+.btn-copy{flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:700;background:#f43f5e;color:#fff;border:none;cursor:pointer;transition:background .2s}
+.btn-copy:hover{background:#e11d48}
+.btn-copy:disabled{background:#d1d5db;cursor:not-allowed}
+.btn-copy:active{transform:scale(.98)}
+.btn-clear{padding:12px 16px;border-radius:12px;font-size:13px;background:#fff;color:#6b7280;border:1px solid #e5e7eb;cursor:pointer}
+.copied-flash{background:#10b981!important}
+
+/* === 已选摘要 === */
+.selected-summary{margin-top:10px;padding:10px 12px;background:#f9fafb;border-radius:12px}
+.selected-label{font-size:11px;color:#9ca3af;margin-bottom:6px}
+.tag-cloud{display:flex;flex-wrap:wrap;gap:4px}
+.tag{font-size:11px;padding:3px 8px;border-radius:99px;background:#fff;border:1px solid #e5e7eb;color:#6b7280}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>👠 AI穿搭提示词生成器</h1>
+  <p>选维度 · 勾标签 · 一键复制即梦/MJ提示词</p>
+</div>
+
+<div class="main">
+  <!-- 模板区 -->
+  <div class="section">
+    <div class="section-label">📋 快捷模板</div>
+    <div class="tpl-scroll" id="tplScroll"></div>
+  </div>
+
+  <!-- 标签栏 -->
+  <div class="tab-bar">
+    <div class="tab-scroll" id="tabBar"></div>
+  </div>
+
+  <!-- 内容区 -->
+  <div class="card" id="contentCard"></div>
+
+  <!-- 预览 -->
+  <div class="preview-card" id="previewCard"></div>
+
+  <!-- 已选摘要 -->
+  <div id="summaryArea"></div>
+</div>
+
+<!-- 底部操作 -->
+<div class="bottom-bar">
+  <div class="btn-row">
+    <button class="btn-copy" id="copyBtn" onclick="doCopy()">📋 一键复制提示词</button>
+    <button class="btn-clear" onclick="clearAll()">清空</button>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// 数据
+// ================================================================
+
+const NEGATIVE = '低俗,暴露,色情,变形,多余手指,面部畸形,多余肢体,水印,文字,logo,模糊,噪点多,比例失调,肤色不均,过曝,欠曝';
+
+const TABS = [
+  {id:'scene',label:'🏙️ 场景',icon:'🏙️',color:'#10b981',light:'#d1fae5'},
+  {id:'lighting',label:'💡 光线',icon:'💡',color:'#f59e0b',light:'#fef3c7'},
+  {id:'camera',label:'📷 镜头',icon:'📷',color:'#8b5cf6',light:'#ede9fe'},
+  {id:'pose',label:'🧍 动作',icon:'🧍',color:'#f43f5e',light:'#fce7f3'},
+  {id:'outfit',label:'👠 穿搭',icon:'👠',color:'#3b82f6',light:'#dbeafe'},
+  {id:'quality',label:'✨ 质量词',icon:'✨',color:'#6b7280',light:'#f3f4f6'},
+];
+
+const BANKS = {
+  scene: {
+    label:'场景',icon:'🏙️',color:'#10b981',items:[
+      {id:'s01',text:'高档写字楼落地窗前',desc:'modern office, floor-to-ceiling window, professional, city view'},
+      {id:'s02',text:'白领办公桌前',desc:'white desk, bright office interior, natural window light'},
+      {id:'s03',text:'会议室长桌旁',desc:'conference room, long table, professional setting'},
+      {id:'s04',text:'商场品牌店铺橱窗前',desc:'luxury brand store window display, shopping mall, reflection'},
+      {id:'s05',text:'商场挑高中庭',desc:'mall atrium, high ceiling, escalator, natural light'},
+      {id:'s06',text:'商场地下停车场',desc:'underground parking garage, dramatic lighting, moody atmosphere'},
+      {id:'s07',text:'高档酒店大堂沙发',desc:'luxury hotel lobby, velvet sofa, grand interior, marble floor'},
+      {id:'s08',text:'酒店旋转楼梯旁',desc:'grand hotel staircase, dramatic spiral, luxurious corridor'},
+      {id:'s09',text:'现代风格卧室床边',desc:'modern bedroom, beside bed, floor lamp, soft warm lighting'},
+      {id:'s10',text:'客厅灰色沙发',desc:'living room, gray fabric sofa, modern home interior, cozy'},
+      {id:'s11',text:'梳妆台前',desc:'vanity table, dressing mirror, bedroom, warm makeup lighting'},
+      {id:'s12',text:'阳台躺椅上',desc:'balcony lounge chair, outdoor urban view, fresh air feel'},
+      {id:'s13',text:'高铁车厢靠窗座位',desc:'high-speed rail, window seat, modern interior, motion blur outside'},
+      {id:'s14',text:'地铁站台候车区',desc:'subway platform, urban transit, waiting area, dramatic lighting'},
+      {id:'s15',text:'公交站牌广告牌前',desc:'bus stop shelter, advertisement billboard, urban street, night'},
+      {id:'s16',text:'咖啡厅靠窗木桌',desc:'cafe, window seat, wooden table, warm afternoon light, coffee cup'},
+      {id:'s17',text:'高档餐厅',desc:'upscale restaurant, dim ambient lighting, candlelight, elegant table setting'},
+      {id:'s18',text:'户外露台餐桌',desc:'outdoor terrace, dinner setting, string lights, warm evening, romantic'},
+      {id:'s19',text:'书店书架间',desc:'bookstore, bookshelf aisle, reading atmosphere, warm lighting'},
+      {id:'s20',text:'艺术画廊展馆',desc:'art gallery, exhibition hall, minimalist white walls, spotlight on art'},
+      {id:'s21',text:'健身房器械区镜子前',desc:'gym, mirror wall, fitness equipment area, bright industrial lighting'},
+      {id:'s22',text:'瑜伽教室',desc:'yoga studio, wooden floor, full-length mirror, natural light, zen'},
+      {id:'s23',text:'都市街角',desc:'urban street corner, city scene, fashionable pedestrians, golden hour'},
+      {id:'s24',text:'街边天桥',desc:'foot bridge, overlooking city street, aerial perspective, urban'},
+      {id:'s25',text:'公园湖边长椅',desc:'park bench, lakeside, tree reflections in water, natural scenery'},
+      {id:'s26',text:'林荫小道',desc:'tree-lined path, dappled sunlight, park, natural green backdrop'},
+      {id:'s27',text:'霓虹灯招牌下街头',desc:'night street, neon signs, colorful glow, urban nightlife, wet ground reflection'},
+      {id:'s28',text:'海边沙滩',desc:'seaside beach, ocean waves, sunny day, resort, tropical atmosphere'},
+      {id:'s29',text:'天台楼顶',desc:'rooftop, city skyline backdrop, dramatic clouds, golden hour, wide view'},
+      {id:'s30',text:'浴室洗手台前',desc:'bathroom vanity, large mirror, steam, soft ambient lighting'},
+      {id:'s31',text:'衣帽间',desc:'walk-in closet, wardrobe interior, clothing racks, fashion atmosphere'},
+      {id:'s32',text:'复古咖啡馆',desc:'vintage cafe, retro decor, warm tones, second-hand books, nostalgic'},
+      {id:'s33',text:'摄影棚纯色背景',desc:'photography studio, white seamless background, professional lighting'},
+      {id:'s34',text:'摄影棚复古布景',desc:'photography studio, vintage set, warm tones, cinematic props'},
+    ]
+  },
+  lighting: {
+    label:'光线',icon:'💡',color:'#f59e0b',items:[
+      {id:'l01',text:'午后阳光透过窗户斜射',desc:'afternoon sunlight through window, raking diagonal light, warm tones'},
+      {id:'l02',text:'晨光温柔照入',desc:'morning golden light, soft sunrise glow, fresh atmosphere'},
+      {id:'l03',text:'阴天户外自然漫射',desc:'overcast sky, diffused natural light, soft shadows, even exposure'},
+      {id:'l04',text:'逆光轮廓光',desc:'backlit, rim light, silhouette effect, hair light, dramatic glow'},
+      {id:'l05',text:'侧窗光打在侧脸',desc:'side window light, split lighting on face, high contrast'},
+      {id:'l06',text:'窗帘过滤的柔光',desc:'curtain-filtered soft light, diffused glow, dreamy atmosphere'},
+      {id:'l07',text:'户外树荫斑驳光',desc:'dappled sunlight through trees, natural shadow patterns, forest'},
+      {id:'l08',text:'日落黄金时段光',desc:'golden hour, warm sunset light, long shadows, golden tones'},
+      {id:'l09',text:'夜间窗外城市灯光',desc:'night, city lights through window, cool blue tones, urban night'},
+      {id:'l10',text:'摄影棚柔光箱主光',desc:'studio softbox, main key light, even illumination, professional'},
+      {id:'l11',text:'环形补光灯效果',desc:'ring light effect, soft frontal fill, even catchlights in eyes'},
+      {id:'l12',text:'射灯局部打光',desc:'spotlight, dramatic accent lighting, single focused beam, theatrical'},
+      {id:'l13',text:'暖色台灯/壁灯光',desc:'warm table lamp or wall lamp, cozy intimate glow, warm tones'},
+      {id:'l14',text:'霓虹灯光',desc:'neon light, colorful glow, vibrant night atmosphere, colored reflections'},
+      {id:'l15',text:'车内冷色仪表灯光',desc:'car interior, cold dashboard light, blue instrument glow, night mood'},
+      {id:'l16',text:'商场明亮均匀灯光',desc:'mall lighting, even bright commercial illumination, retail atmosphere'},
+      {id:'l17',text:'蜡烛光晚餐氛围',desc:'candlelight, intimate dinner atmosphere, warm flickering light'},
+      {id:'l18',text:'光影对比强烈',desc:'high contrast lighting, dramatic shadows, chiaroscuro effect'},
+      {id:'l19',text:'整体柔和低对比',desc:'soft low-contrast lighting, even soft shadows, flattering, diffused'},
+      {id:'l20',text:'暖色调统一',desc:'warm color temperature throughout, golden amber tones, cozy mood'},
+      {id:'l21',text:'冷色调统一',desc:'cool color temperature throughout, blue tones, clean modern mood'},
+      {id:'l22',text:'蓝橙对比（黄昏感）',desc:'blue-orange color contrast, magic hour, cinematic color grading'},
+      {id:'l23',text:'单侧光制造明暗分界',desc:'single-source side lighting, dramatic split lighting, noir feel'},
+      {id:'l24',text:'顶部柔光',desc:'top-down soft light, even overhead illumination, flat even exposure'},
+      {id:'l25',text:'镜面反射光',desc:'reflected light from mirror or shiny floor surface, ambient bounce'},
+    ]
+  },
+  camera: {
+    label:'镜头',icon:'📷',color:'#8b5cf6',items:[
+      {id:'c01',text:'地面极低视角仰拍',desc:'ground-level shot, ultra-low angle, dramatic upward perspective, leg-lengthening'},
+      {id:'c02',text:'低角度仰拍',desc:'low angle upward shot, perspective compression, flattering angle'},
+      {id:'c03',text:'平视视角（眼平线）',desc:'eye-level shot, straight-on perspective, natural comfortable view'},
+      {id:'c04',text:'俯视45度',desc:'slightly above eye level, 45-degree overhead, intimate overhead'},
+      {id:'c05',text:'俯视90度（上帝视角）',desc:'overhead top-down shot, bird eye view, flat lay perspective'},
+      {id:'c06',text:'侧面90度横拍',desc:'pure side profile, 90-degree lateral shot, architectural side view'},
+      {id:'c07',text:'全身照（从头到脚）',desc:'full body shot, head to toe in frame, complete figure'},
+      {id:'c08',text:'半身照（腰部以上）',desc:'half body shot, waist-up, balances upper body and some leg'},
+      {id:'c09',text:'肖像特写（肩部以上）',desc:'portrait close-up, shoulders up, emphasizes face and expression'},
+      {id:'c10',text:'面部大特写',desc:'extreme close-up, face detail shot, skin texture visible'},
+      {id:'c11',text:'三分之二身（膝盖以上）',desc:'three-quarter body, above knees, most flattering full-body'},
+      {id:'c12',text:'腿/脚部特写',desc:'leg and feet close-up, shoe detail shot, shoe fashion focus'},
+      {id:'c13',text:'九宫格构图（主体在交点）',desc:'rule of thirds composition, subject on grid intersection'},
+      {id:'c14',text:'中心构图',desc:'centered composition, symmetrical framing, balanced powerful'},
+      {id:'c15',text:'对角线构图（腿部延伸）',desc:'diagonal composition, leg line creates dynamic extension'},
+      {id:'c16',text:'框架构图（门窗镜框）',desc:'frame within frame, doorway or window or mirror framing subject'},
+      {id:'c17',text:'前景虚化突出主体',desc:'shallow depth of field, blurred foreground, subject sharp'},
+      {id:'c18',text:'留白构图（大量负空间）',desc:'minimal composition, ample negative space, clean elegant'},
+      {id:'c19',text:'镜像反射构图',desc:'reflection composition, mirror or shiny floor reflection, doubled image'},
+      {id:'c20',text:'螺旋透视（楼梯走廊）',desc:'forced perspective, staircase or corridor vanishing point, depth'},
+    ]
+  },
+  pose: {
+    label:'动作',icon:'🧍',color:'#f43f5e',items:[
+      {id:'p01',text:'自然站立，双手自然下垂',desc:'natural standing, hands at sides relaxed, confident neutral posture'},
+      {id:'p02',text:'单手插兜（裤兜或衣兜）',desc:'standing, one hand casually in pocket, relaxed confident pose'},
+      {id:'p03',text:'双手插兜',desc:'standing, both hands in pockets, cool casual stance, hip pop'},
+      {id:'p04',text:'靠墙站立，单手摸墙',desc:'leaning against wall, one hand touching wall, relaxed'},
+      {id:'p05',text:'靠栏杆，身体微微倾斜',desc:'leaning on railing, slight body tilt away from camera'},
+      {id:'p06',text:'交叉腿站立（重心腿在后）',desc:'standing with crossed legs, weight on back leg, hip tilt'},
+      {id:'p07',text:'单腿微曲（重心腿承重）',desc:'standing, one knee slightly bent, casual weight shift'},
+      {id:'p08',text:'背靠落地窗，逆光剪影',desc:'back against floor-to-ceiling window, backlit silhouette'},
+      {id:'p09',text:'行走中的抓拍姿态',desc:'candid walking pose, motion blur hint, natural in-motion shot'},
+      {id:'p10',text:'回头看镜头（回眸）',desc:'looking back over shoulder, glancing behind, allure'},
+      {id:'p11',text:'端坐椅子上，背部挺直',desc:'sitting upright in chair, straight back, professional posture'},
+      {id:'p12',text:'靠椅背坐，姿态放松',desc:'relaxed sitting, leaning casually on chair back, laid-back'},
+      {id:'p13',text:'翘二郎腿（脚踝搭膝上）',desc:'sitting with ankle crossed over opposite knee, crossed legs, elegant'},
+      {id:'p14',text:'翘二郎腿（脚尖点地）',desc:'sitting, legs loosely crossed, toes pointed, delicate'},
+      {id:'p15',text:'双腿并拢斜放一侧',desc:'sitting, legs together angled to one side, feminine pose'},
+      {id:'p16',text:'双腿伸直向前',desc:'sitting, legs extended straight forward, elongated leg line'},
+      {id:'p17',text:'侧身坐，单腿蜷起',desc:'sitting sideways, one leg tucked under, intimate casual'},
+      {id:'p18',text:'沙发瘫坐，腿搭扶手',desc:'lounging on sofa, legs draped over armrest, relaxed luxe'},
+      {id:'p19',text:'地板上盘腿坐',desc:'sitting cross-legged on floor, relaxed bohemian pose'},
+      {id:'p20',text:'蹲下整理鞋/系鞋带',desc:'squatting, adjusting shoes or tying shoelaces, candid fashion moment'},
+      {id:'p21',text:'半蹲姿势（女神蹲）',desc:'half-squat, lady pose, dress spread out gracefully, feminine'},
+      {id:'p22',text:'弯腰捡东西/俯身',desc:'bending forward, picking up item from ground, natural motion'},
+      {id:'p23',text:'单膝跪地姿势',desc:'kneeling on one knee, half-genuflect, dramatic pose'},
+      {id:'p24',text:'手撩拨头发',desc:'running hand through hair, flipping hair, flirtatious gesture'},
+      {id:'p25',text:'手扶耳边/托腮',desc:'hand near ear, chin resting on hand, pensive alluring'},
+      {id:'p26',text:'手摸脖颈/项链',desc:'touching neck, adjusting necklace, elegant neckline focus'},
+      {id:'p27',text:'手拉裙摆/整理衣角',desc:'holding dress hem, adjusting garment edge, graceful fabric control'},
+      {id:'p28',text:'手持物品（咖啡/手机/包）',desc:'holding prop: coffee cup or phone or handbag, lifestyle fashion'},
+      {id:'p29',text:'手叉腰（经典站姿）',desc:'hands on hips, hip pop, power pose, classic fashion'},
+      {id:'p30',text:'手扶车门/门框',desc:'hand on car door or door frame, exit-entrance dynamic'},
+      {id:'p31',text:'踮脚尖（重心在前掌）',desc:'standing on tiptoes, heels raised, elongated calf line'},
+      {id:'p32',text:'脚尖勾起，脚跟着地',desc:'flexed foot, toe pointed upward, ballet-inspired delicate pose'},
+      {id:'p33',text:'腿交叉站立（脚踝扣）',desc:'standing, ankle locked in front of opposite leg, figure-4 pose'},
+      {id:'p34',text:'目视正前方镜头',desc:'looking directly at camera, direct confident gaze, engagement'},
+      {id:'p35',text:'眼神看向画面外',desc:'looking off-frame, indirect gaze, contemplative mysterious'},
+      {id:'p36',text:'微微低头，眼看上方',desc:'slight downward head tilt, eyes looking upward, demure shy'},
+      {id:'p37',text:'侧脸，眼不看镜头',desc:'pure profile view, eyes not on camera, contemplative'},
+      {id:'p38',text:'微笑，露出对称笑容',desc:'symmetric warm smile, natural teeth showing, approachable'},
+      {id:'p39',text:'表情冷淡/高冷',desc:'cool aloof expression, minimal emotion, mysterious attitude'},
+    ]
+  },
+  outfit: {
+    label:'穿搭',icon:'👠',color:'#3b82f6',subLabel:'穿搭',subs:[
+      {key:'heels',icon:'👠',title:'高跟鞋',items:[
+        {id:'h01',text:'黑色漆皮细高跟',desc:'black patent leather stiletto heel, mirror gloss, sleek shine'},
+        {id:'h02',text:'酒红色漆皮细高跟',desc:'burgundy patent leather stiletto, high gloss, rich tone'},
+        {id:'h03',text:'裸色/米色漆皮细高跟',desc:'nude patent leather stiletto, beige, leg-lengthening nude tone'},
+        {id:'h04',text:'白色漆皮细高跟',desc:'white patent leather stiletto, crisp clean finish'},
+        {id:'h05',text:'缎面柔光细高跟',desc:'satin finish stiletto, soft luster, silk sheen, delicate'},
+        {id:'h06',text:'哑光绒面细高跟',desc:'suede stiletto, matte velvet finish, understated luxury'},
+        {id:'h07',text:'金属银色细高跟',desc:'metallic silver stiletto, chrome reflective, futuristic edge'},
+        {id:'h08',text:'金属金色细高跟',desc:'metallic gold stiletto, champagne gold, luxury accent'},
+        {id:'h09',text:'蛇纹细高跟',desc:'snake skin emboss stiletto, reptile print, exotic texture'},
+        {id:'h10',text:'珠光幻彩细高跟',desc:'pearlescent stiletto, iridescent color-shift, holographic'},
+        {id:'h11',text:'PVC透明果冻细高跟',desc:'transparent PVC stiletto, jelly futuristic, see-through material'},
+        {id:'h12',text:'一字带高跟凉鞋',desc:'strappy heel sandals, single strap across vamp, elegant'},
+        {id:'h13',text:'绑带缠绕高跟',desc:'lace-up heels, multiple intertwined straps, bondage-inspired fashion'},
+        {id:'h14',text:'细带高跟凉鞋',desc:'thin-strapped heel sandals, delicate multiple straps, refined'},
+        {id:'h15',text:'穆勒拖（后空高跟）',desc:'mules, backless heels, slide-on style, modern chic'},
+        {id:'h16',text:'踝靴（及踝短靴）',desc:'ankle boots, short boot with heel, structured sleek'},
+        {id:'h17',text:'过膝长靴细高跟',desc:'over-the-knee boots, thigh-high stiletto, dramatic leg'},
+        {id:'h18',text:'粗跟方头高跟',desc:'block heel square toe, chunky retro heel, 90s revival'},
+      ]},
+      {key:'hosiery',icon:'🧦',title:'丝袜',items:[
+        {id:'hs01',text:'0D超薄（几乎透明）',desc:'0 denier, ultra sheer, nearly invisible sheer'},
+        {id:'hs02',text:'5D-10D轻薄（若隐若现）',desc:'5-10 denier, semi-sheer, hints of skin visible'},
+        {id:'hs03',text:'15D中等薄透',desc:'15 denier, medium transparency, soft coverage'},
+        {id:'hs04',text:'30D半透肤（半遮瑕）',desc:'30 denier, semi-opaque, covers blemishes'},
+        {id:'hs05',text:'80D以上实色（完全不透明）',desc:'80+ denier, opaque, solid color coverage'},
+        {id:'hs06',text:'哑光（无反光）',desc:'matte finish, no shine, flat natural appearance'},
+        {id:'hs07',text:'微闪（若有若无）',desc:'subtle shimmer, faint light-catching, refined sheen'},
+        {id:'hs08',text:'缎面柔光（丝绸光泽）',desc:'satin sheen, silk fabric luster, soft luxurious'},
+        {id:'hs09',text:'油亮光泽（马油黑丝）',desc:'ultra glossy, wet-look patent, highest shine black'},
+        {id:'hs10',text:'珠光质感',desc:'pearlescent sheen, soft iridescent glow, ethereal'},
+        {id:'hs11',text:'丝滑流动感',desc:'silky smooth, flowing visual texture, elegant movement'},
+        {id:'hs12',text:'紧致包裹感',desc:'form-fitting, compression, hugs skin curves'},
+        {id:'hs13',text:'无痕贴合（边缘隐形）',desc:'seamless top, no visible band, clean invisible edge'},
+        {id:'hs14',text:'纯黑色',desc:'pure black, jet black, solid black, deepest tone'},
+        {id:'hs15',text:'微透黑（薄黑丝）',desc:'sheer black, thin black, translucent skin hint'},
+        {id:'hs16',text:'哑光黑',desc:'matte black, flat black, no-shine sophisticated'},
+        {id:'hs17',text:'油亮黑（马油黑丝）',desc:'glossy black, wet-look patent black, high-shine elegant'},
+        {id:'hs18',text:'浅肤色（偏白）',desc:'light skin tone, pale beige, lightest nude'},
+        {id:'hs19',text:'中肤色',desc:'medium skin tone, natural beige, balanced nude'},
+        {id:'hs20',text:'自然肤色（暖调）',desc:'natural beige, warm nude tone, natural warmth'},
+        {id:'hs21',text:'冷白肤色',desc:'cool white, porcelain, pale ivory, icy tone'},
+        {id:'hs22',text:'浅灰色',desc:'light gray, silver-gray, neutral cool tone'},
+        {id:'hs23',text:'深灰色/炭灰',desc:'charcoal gray, dark gray, moody neutral'},
+        {id:'hs24',text:'奶白色/纯白',desc:'pure white, creamy white, clean crisp tone'},
+        {id:'hs25',text:'酒红色',desc:'burgundy, wine red, dark crimson, rich romantic tone'},
+      ]},
+      {key:'tops',icon:'👚',title:'上衣',items:[
+        {id:'t01',text:'白衬衫（经典修身）',desc:'white dress shirt, tailored fit, crisp cotton, professional'},
+        {id:'t02',text:'白色丝绸衬衫',desc:'white silk blouse, flowy elegant, luxurious fabric'},
+        {id:'t03',text:'浅蓝色衬衫',desc:'light blue dress shirt, crisp clean, fresh professional'},
+        {id:'t04',text:'黑色修身衬衫',desc:'black fitted shirt, sleek silhouette, versatile base'},
+        {id:'t05',text:'缎面/丝绸上衣',desc:'satin or silk top, glossy fabric, luxurious sheen'},
+        {id:'t06',text:'针织开衫（春秋）',desc:'cardigan, knitted open-front sweater, layered cozy'},
+        {id:'t07',text:'紧身针织衫',desc:'fitted sweater, slim knit top, body-hugging warm'},
+        {id:'t08',text:'V领针织衫',desc:'V-neck sweater, elegant neckline, sophisticated'},
+        {id:'t09',text:'宽松毛衣/套头衫',desc:'oversized sweater, chunky knit pullover, relaxed cozy'},
+        {id:'t10',text:'细吊带上衣',desc:'spaghetti strap top, delicate camisole, feminine intimate'},
+        {id:'t11',text:'宽肩带背心/吊带',desc:'wide-strapped cami, tank top, casual breathable'},
+        {id:'t12',text:'丝绸吊带（睡袍风）',desc:'silk cami, robe-style top, luxe intimate wear'},
+        {id:'t13',text:'蕾丝吊带上衣',desc:'lace camisole, romantic delicate, feminine texture'},
+        {id:'t14',text:'露肩上衣/斜肩',desc:'off-shoulder top, one-shoulder blouse, elegant shoulder reveal'},
+        {id:'t15',text:'紧身打底衫',desc:'bodycon fitted top, slim base layer, sleek underlayer'},
+        {id:'t16',text:'宽松白T恤',desc:'oversized white tee, casual relaxed fit, streetwear base'},
+        {id:'t17',text:'露脐短上衣',desc:'crop top, midriff-baring top, youthful summer'},
+        {id:'t18',text:'西装马甲',desc:'vest, tailored waistcoat, layering piece, sophisticated'},
+        {id:'t19',text:'蕾丝上衣',desc:'lace blouse, embroidered top, romantic feminine texture'},
+        {id:'t20',text:'皮质/PU上衣',desc:'leather-look top, faux leather blouse, edgy sophisticated'},
+      ]},
+      {key:'skirts',icon:'👗',title:'裙装',items:[
+        {id:'sk01',text:'黑色包臀裙（修身）',desc:'black pencil skirt, body-hugging, knee-length, professional sleek'},
+        {id:'sk02',text:'A字半身裙（伞裙）',desc:'A-line skirt, flare silhouette, versatile flattering'},
+        {id:'sk03',text:'百褶短裙（学院风）',desc:'pleated mini skirt, preppy, youthful schoolgirl'},
+        {id:'sk04',text:'缎面/丝绸长裙',desc:'satin midi skirt, flowing, elegant floor-length'},
+        {id:'sk05',text:'皮质紧身裙',desc:'leather-look pencil skirt, sleek, edgy professional'},
+        {id:'sk06',text:'薄纱/网纱裙',desc:'tulle skirt, sheer layers, ethereal romantic'},
+        {id:'sk07',text:'针织包臀裙（秋冬）',desc:'knit bodycon skirt, warm texture, cozy winter'},
+        {id:'sk08',text:'蕾丝半身裙',desc:'lace midi skirt, romantic delicate, feminine texture'},
+        {id:'sk09',text:'吊带连衣裙',desc:'spaghetti strap dress, slip dress, minimal elegant'},
+        {id:'sk10',text:'紧身连衣裙',desc:'bodycon dress, figure-hugging, sleek form-fitting'},
+        {id:'sk11',text:'高开叉连衣裙',desc:'high-slit dress, leg-revealing gown, dramatic glamorous'},
+        {id:'sk12',text:'雪纺长裙',desc:'chiffon maxi dress, flowy light fabric, dreamy elegant'},
+        {id:'sk13',text:'小黑裙（经典）',desc:'little black dress, LBD, iconic timeless'},
+        {id:'sk14',text:'鱼尾裙',desc:'mermaid skirt, fitted then flared silhouette, dramatic glamour'},
+      ]},
+      {key:'pants',icon:'👖',title:'裤装',items:[
+        {id:'pa01',text:'黑色铅笔裤/小黑裤',desc:'black skinny pants, sleek leg-lengthening, versatile'},
+        {id:'pa02',text:'白色直筒裤',desc:'white straight-leg pants, clean crisp, fresh professional'},
+        {id:'pa03',text:'浅蓝色牛仔裤',desc:'light blue denim jeans, casual, relaxed everyday'},
+        {id:'pa04',text:'深蓝色牛仔紧身裤',desc:'dark wash skinny jeans, slim fit denim, modern casual'},
+        {id:'pa05',text:'皮质紧身裤/皮裤',desc:'leather-look pants, faux leather skinny, edgy chic'},
+        {id:'pa06',text:'阔腿裤（显气场）',desc:'wide-leg pants, palazzo style, dramatic sophisticated'},
+        {id:'pa07',text:'热裤/百慕大短裤',desc:'hot pants, short shorts, leg-baring summer'},
+        {id:'pa08',text:'百褶短裤',desc:'pleated shorts, preppy casual, youthful summer'},
+        {id:'pa09',text:'牛仔短裤',desc:'denim shorts, casual summer staple, relaxed'},
+      ]},
+      {key:'outerwear',icon:'🧥',title:'外套',items:[
+        {id:'o01',text:'黑色修身西装',desc:'black tailored blazer, structured fit, power professional'},
+        {id:'o02',text:'白色/米色西装',desc:'white or beige blazer, fresh professional, sophisticated'},
+        {id:'o03',text:'oversize西装（慵懒风）',desc:'oversized blazer, relaxed draping, effortless chic'},
+        {id:'o04',text:'短款西装外套',desc:'cropped jacket, short blazer, trendy structured'},
+        {id:'o05',text:'皮质西装/皮西装',desc:'leather blazer, edgy sophisticated, bold statement'},
+        {id:'o06',text:'风衣（卡其/军绿）',desc:'trench coat, khaki or olive, classic timeless outerwear'},
+        {id:'o07',text:'大衣/呢子大衣',desc:'wool overcoat, structured long coat, elegant winter'},
+        {id:'o08',text:'仿皮草外套',desc:'faux fur coat, plush texture, luxe cozy opulence'},
+        {id:'o09',text:'飞行员夹克/PUFFER',desc:'bomber jacket, quilted puffer jacket, sporty casual'},
+        {id:'o10',text:'针织开衫（大号当外套）',desc:'oversized cardigan, knit outer layer, cozy layered'},
+      ]},
+      {key:'accessories',icon:'💍',title:'配饰',items:[
+        {id:'a01',text:'手提/斜挎品牌包',desc:'designer handbag or crossbody bag, luxury accessory'},
+        {id:'a02',text:'链条包（小香风）',desc:'chain strap bag, quilted bag style, Chanel-inspired'},
+        {id:'a03',text:'手拿信封包/晚宴包',desc:'clutch bag, evening envelope clutch, formal elegant'},
+        {id:'a04',text:'托特包/购物袋',desc:'tote bag, shopping bag style, casual functional'},
+        {id:'a05',text:'珍珠耳环',desc:'pearl earrings, elegant drop style, timeless luxury'},
+        {id:'a06',text:'金属几何耳环',desc:'metallic geometric earrings, modern art, bold stylish'},
+        {id:'a07',text:'长款耳坠/流苏耳环',desc:'chandelier earrings, long drop style, glamorous movement'},
+        {id:'a08',text:'珍珠项链',desc:'pearl necklace, classic strand, refined elegance'},
+        {id:'a09',text:'细金属锁骨链',desc:'thin chain necklace, delicate collar, subtle refined'},
+        {id:'a10',text:'手镯/手链叠戴',desc:'stacked bracelets and bangles, layered arm candy'},
+        {id:'a11',text:'手表',desc:'watch, luxury timepiece, sophisticated accessory'},
+        {id:'a12',text:'金丝边眼镜',desc:'gold wire-rimmed glasses, intellectual chic, stylish nerd'},
+        {id:'a13',text:'猫眼眼镜',desc:'cat-eye glasses, retro glamorous, vintage modern'},
+        {id:'a14',text:'太阳镜/墨镜（大号）',desc:'oversized sunglasses, glamour shield, star style'},
+        {id:'a15',text:'棒球帽/鸭舌帽',desc:'baseball cap, sporty casual, streetwear edge'},
+        {id:'a16',text:'贝雷帽',desc:'beret, artistic Parisian vibe, bohemian creative'},
+        {id:'a17',text:'宽檐帽（度假风）',desc:'wide-brim hat, resort bohemian style, summer escape'},
+        {id:'a18',text:'丝巾/小方巾',desc:'silk scarf, neck scarf, neckerchief, refined accent'},
+      ]},
+    ]
+  },
+  quality: {
+    label:'质量词',icon:'✨',color:'#6b7280',items:[
+      {id:'q01',text:'8K高清',desc:'8K ultra HD, extreme detail, razor sharp'},
+      {id:'q02',text:'4K高清',desc:'4K high resolution, sharp clarity'},
+      {id:'q03',text:'电影级画质',desc:'cinematic quality, film grain texture, cinematic color grading'},
+      {id:'q04',text:'摄影级画质',desc:'photorealistic quality, professional grade'},
+      {id:'q05',text:'超写实风格',desc:'hyperrealistic, true-to-life rendering, lifelike'},
+      {id:'q06',text:'杂志封面质感',desc:'magazine cover quality, editorial print, Vogue style'},
+      {id:'q07',text:'商业广告质感',desc:'commercial photography quality, polished luxury ad'},
+      {id:'q08',text:'无畸形',desc:'no deformation, anatomically correct body'},
+      {id:'q09',text:'比例正确',desc:'proper proportions, natural anatomy, balanced figure'},
+      {id:'q10',text:'面部对称',desc:'symmetrical face, balanced features, perfect symmetry'},
+      {id:'q11',text:'无多余手指',desc:'correct number of fingers, clean hand detail'},
+      {id:'q12',text:'皮肤质感自然',desc:'natural skin texture, realistic complexion, healthy glow'},
+      {id:'q13',text:'高级感',desc:'high-end, luxury aesthetic, premium quality feel'},
+      {id:'q14',text:'杂志大片感',desc:'editorial fashion shoot, Vogue Elle style, premium'},
+      {id:'q15',text:'街拍风格',desc:'street style fashion, urban chic, Candid street photography'},
+      {id:'q16',text:'轻奢质感',desc:'elegant luxury, refined taste, understated opulence'},
+      {id:'q17',text:'日常通勤风',desc:'daily commute style, workwear chic, office appropriate'},
+      {id:'q18',text:'油画质感',desc:'oil painting texture, artistic brushstroke, classical art'},
+      {id:'q19',text:'柔焦人像',desc:'soft focus portrait, dreamy bokeh, ethereal soft'},
+      {id:'q20',text:'氛围感强',desc:'strong atmosphere, moody dramatic lighting, cinematic mood'},
+      {id:'q21',text:'干净背景（白/浅灰）',desc:'clean white background, minimal, product shot clean'},
+      {id:'q22',text:'景深虚化背景',desc:'bokeh background, shallow depth of field, professional portrait'},
+      {id:'q23',text:'莫兰迪色系',desc:'Morandi color palette, muted pastel tones, sophisticated'},
+      {id:'q24',text:'高级灰调',desc:'sophisticated gray tones, muted elegance, neutral luxe'},
+      {id:'q25',text:'暖色调',desc:'warm color grade, golden amber tones, cozy inviting'},
+      {id:'q26',text:'冷色调',desc:'cool color grade, blue undertones, clean modern'},
+      {id:'q27',text:'港风复古色调',desc:'Hong Kong retro tone, 90s film aesthetic, nostalgic cinematic'},
+      {id:'q28',text:'日系清透感',desc:'Japanese airy aesthetic, natural light, clean fresh'},
+      {id:'q29',text:'韩系柔和感',desc:'Korean soft aesthetic, pastel tones, K-drama style'},
+      {id:'q30',text:'黑白经典',desc:'classic black and white, monochrome, timeless editorial'},
+      {id:'q31',text:'褪色复古感',desc:'faded vintage, nostalgic film look, old photo aesthetic'},
+    ]
+  }
+};
+
+const TEMPLATES = [
+  {id:'tpl_commute',name:'💼 职场通勤',desc:'办公室/西装/干练气质',icon:'💼',s:{scene:['s01','s02'],lighting:['l01','l05'],camera:['c02','c03','c07'],pose:['p01','p02','p06'],outfit:{heels:['h01','h03','h05'],hosiery:['hs03','hs06','hs09'],tops:['t01','t04'],skirts:['sk01','sk02'],pants:['pa01','pa05'],outerwear:['o01','o04'],accessories:['a01','a05','a09']}}},
+  {id:'tpl_cafe',name:'☕ 咖啡厅午后',desc:'咖啡厅/文艺/温柔气质',icon:'☕',s:{scene:['s16','s32'],lighting:['l01','l06','l17'],camera:['c03','c08','c13'],pose:['p11','p13','p14','p28'],outfit:{heels:['h03','h05','h12'],hosiery:['hs02','hs07','hs08','hs19','hs20'],tops:['t05','t06','t10'],skirts:['sk02','sk03','sk04'],pants:['pa02'],accessories:['a02','a06','a08','a18']}}},
+  {id:'tpl_mall',name:'🛍️ 商场逛街',desc:'商场/时尚/都市感',icon:'🛍️',s:{scene:['s04','s05','s07'],lighting:['l15','l18'],camera:['c02','c07','c15'],pose:['p01','p09','p10','p24'],outfit:{heels:['h02','h08','h13'],hosiery:['hs03','hs08','hs15','hs16'],tops:['t03','t12','t14'],skirts:['sk01','sk06','sk09'],pants:['pa01','pa07'],outerwear:['o01','o05'],accessories:['a01','a07','a13','a14']}}},
+  {id:'tpl_home',name:'🏠 居家私房',desc:'卧室/沙发/温柔私密',icon:'🏠',s:{scene:['s09','s10','s12'],lighting:['l06','l19'],camera:['c04','c05','c11'],pose:['p15','p18','p25'],outfit:{heels:['h03','h05','h15'],hosiery:['hs01','hs02','hs08','hs09','hs18','hs19','hs20'],tops:['t09','t10','t12','t16'],skirts:['sk09','sk12'],pants:['pa06','pa08'],accessories:['a05','a06','a10']}}},
+  {id:'tpl_night',name:'🌃 夜间都市',desc:'霓虹/酒店/高级氛围',icon:'🌃',s:{scene:['s07','s08','s27','s29'],lighting:['l14','l18','l22'],camera:['c02','c07','c16'],pose:['p04','p05','p06','p07','p29'],outfit:{heels:['h01','h02','h09','h11','h13'],hosiery:['hs01','hs08','hs09','hs14','hs16','hs17'],tops:['t05','t12','t14'],skirts:['sk01','sk05','sk09'],pants:['pa01'],outerwear:['o01','o05'],accessories:['a02','a03','a07','a13','a14']}}},
+  {id:'tpl_outdoor',name:'🌿 户外自然',desc:'公园/海边/清新自然',icon:'🌿',s:{scene:['s25','s26','s28'],lighting:['l02','l03','l07','l08'],camera:['c03','c07','c13'],pose:['p01','p08','p10','p24'],outfit:{heels:['h03','h05','h12'],hosiery:['hs02','hs06','hs07','hs19','hs20','hs24'],tops:['t06','t08','t11'],skirts:['sk02','sk03','sk04'],pants:['pa02','pa09'],outerwear:['o06','o10'],accessories:['a04','a08','a15','a16','a17','a18']}}},
+  {id:'tpl_studio',name:'📸 摄影棚大片',desc:'棚拍/杂志/极致质感',icon:'📸',s:{scene:['s33','s34'],lighting:['l10','l11','l04'],camera:['c03','c07','c08','c09'],pose:['p01','p02','p03','p34'],outfit:{heels:['h01','h02','h05','h08'],hosiery:['hs02','hs03','hs08','hs14','hs17','hs20'],tops:['t02','t05','t12'],skirts:['sk04','sk05','sk09'],outerwear:['o01','o07'],accessories:['a02','a05','a06','a07','a08','a09','a10']}}},
+];
+
+// ================================================================
+// 状态
+// ================================================================
+let activeTab = 'scene';
+let selections = {};
+let outfitSelections = {};
+let copied = false;
+
+function init() {
+  selections = {};
+  outfitSelections = {};
+  renderTabs();
+  renderContent();
+  renderPreview();
+  renderSummary();
+  updateCopyBtn();
+}
+
+function toggleSimple(cat, id) {
+  if (!selections[cat]) selections[cat] = [];
+  const arr = selections[cat];
+  const idx = arr.indexOf(id);
+  if (idx >= 0) arr.splice(idx, 1); else arr.push(id);
+  renderContent();
+  renderPreview();
+  renderSummary();
+  updateCopyBtn();
+}
+
+function toggleOutfit(sub, id) {
+  if (!outfitSelections[sub]) outfitSelections[sub] = [];
+  const arr = outfitSelections[sub];
+  const idx = arr.indexOf(id);
+  if (idx >= 0) arr.splice(idx, 1); else arr.push(id);
+  renderContent();
+  renderPreview();
+  renderSummary();
+  updateCopyBtn();
+}
+
+function loadTemplate(tpl) {
+  selections = {};
+  outfitSelections = {};
+  Object.entries(tpl.s).forEach(([k, ids]) => {
+    if (k !== 'outfit') selections[k] = [...ids];
+  });
+  if (tpl.s.outfit) outfitSelections = JSON.parse(JSON.stringify(tpl.s.outfit));
+  renderTabs();
+  renderContent();
+  renderPreview();
+  renderSummary();
+  updateCopyBtn();
+}
+
+function clearAll() {
+  selections = {};
+  outfitSelections = {};
+  renderTabs();
+  renderContent();
+  renderPreview();
+  renderSummary();
+  updateCopyBtn();
+}
+
+// ================================================================
+// 渲染：模板
+// ================================================================
+function renderTemplates() {
+  const el = document.getElementById('tplScroll');
+  el.innerHTML = TEMPLATES.map(t =>
+    `<button class="tpl-card" onclick="loadTemplate(TEMPLATES.find(x=>x.id=='${t.id}'))">
+      <div class="tpl-icon">${t.icon}</div>
+      <div class="tpl-name">${t.name}</div>
+      <div class="tpl-desc">${t.desc}</div>
+    </button>`
+  ).join('');
+}
+
+// ================================================================
+// 渲染：标签栏
+// ================================================================
+function renderTabs() {
+  const el = document.getElementById('tabBar');
+  el.innerHTML = TABS.map(tab => {
+    const count = tab.id === 'outfit'
+      ? Object.values(outfitSelections).reduce((a,b)=>a+(b?.length||0),0)
+      : (selections[tab.id]?.length||0);
+    return `<button class="tab-btn${activeTab===tab.id?' active':''}" onclick="switchTab('${tab.id}')">${tab.label}${count>0?`<span class="tab-count">(${count})</span>`:''}</button>`;
+  }).join('');
+}
+
+// ================================================================
+// 渲染：内容区
+// ================================================================
+function renderContent() {
+  const el = document.getElementById('contentCard');
+
+  if (activeTab === 'outfit') {
+    const sub = BANKS.outfit;
+    el.innerHTML = sub.subs.map(cat => {
+      const sel = outfitSelections[cat.key]||[];
+      return `
+        <div class="accordion-item">
+          <div class="accordion-title" onclick="toggleAccordion(this)">
+            <span class="ai">${cat.icon}</span>
+            <span class="an">${cat.title}</span>
+            <span class="ac">${sel.length>0?`已选 ${sel.length} ▾`:'展开 ▾'}</span>
+          </div>
+          <div class="accordion-body">${cat.items.map(opt=>`
+            <button class="chip${sel.includes(opt.id)?' selected':''}" onclick="toggleOutfit('${cat.key}','${opt.id}')">${opt.text}</button>
+          `).join('')}</div>
+        </div>`;
+    }).join('');
+  } else {
+    const bank = BANKS[activeTab];
+    const sel = selections[activeTab]||[];
+    el.innerHTML = `
+      <div class="cat-header">
+        <span class="cat-icon" style="background:${bank.color}">${bank.icon}</span>
+        <span class="cat-title" style="color:${bank.color}">${bank.label}</span>
+        <span class="cat-count">${sel.length} 已选</span>
+      </div>
+      <div class="flex-wrap" style="display:flex;flex-wrap:wrap;gap:6px">${bank.items.map(opt=>`
+        <button class="chip${sel.includes(opt.id)?' selected':''}" onclick="toggleSimple('${activeTab}','${opt.id}')">${opt.text}</button>
+      `).join('')}</div>`;
+  }
+}
+
+// ================================================================
+// 渲染：预览
+// ================================================================
+function flatMap() {
+  const r = {};
+  Object.values(BANKS).forEach(b => {
+    if (b.subs) b.subs.forEach(s => s.items?.forEach(i => { r[i.id] = i.desc; }));
+    else b.items?.forEach(i => { r[i.id] = i.desc; });
+  });
+  return r;
+}
+
+function buildPrompt() {
+  const fm = flatMap();
+  const parts = [];
+  Object.values(selections).flat().forEach(id => { if (fm[id]) parts.push(fm[id]); });
+  Object.values(outfitSelections).flat().forEach(id => { if (fm[id]) parts.push(fm[id]); });
+  return parts.join(', ');
+}
+
+function buildQuality() {
+  const fm = flatMap();
+  return (selections.quality||[]).map(id=>fm[id]).filter(Boolean).join(', ');
+}
+
+function renderPreview() {
+  const prompt = buildPrompt();
+  const quality = buildQuality();
+  const count = Object.values(selections).reduce((a,b)=>a+(b?.length||0),0)+Object.values(outfitSelections).reduce((a,b)=>a+(b?.length||0),0);
+  const el = document.getElementById('previewCard');
+  el.innerHTML = `
+    <div class="preview-header">
+      <span class="preview-title">📝 提示词预览</span>
+      <span style="font-size:11px;color:#9ca3af">${count} 项已选</span>
+    </div>
+    <div class="preview-text${!prompt?' preview-empty':''}">${prompt||'从上方各维度勾选，提示词将自动生成…'}</div>
+    ${quality ? `<hr class="divider"><div class="section-title">✨ 质量词</div><div style="font-size:12px;color:#9ca3af">${quality}</div>` : ''}
+    <hr class="divider">
+    <div style="font-size:11px;color:#9ca3af"><span style="font-weight:600;color:#6b7280">❌ 负面提示词：</span>${NEGATIVE}</div>`;
+}
+
+// ================================================================
+// 渲染：摘要
+// ================================================================
+function renderSummary() {
+  const fm = flatMap();
+  const all = [
+    ...Object.values(selections).flat().map(id=>({t:fm[id],k:id})),
+    ...Object.values(outfitSelections).flat().map(id=>({t:fm[id],k:id}))
+  ].filter(x=>x.t);
+  const el = document.getElementById('summaryArea');
+  if (!all.length) { el.innerHTML=''; return; }
+  // 显示中文文本
+  const cnMap = {};
+  Object.values(BANKS).forEach(b=>{
+    if(b.subs) b.subs.forEach(s=>s.items?.forEach(i=>{cnMap[i.id]=i.text}));
+    else b.items?.forEach(i=>{cnMap[i.id]=i.text});
+  });
+  const allCN = [
+    ...Object.values(selections).flat().map(id=>({t:cnMap[id],k:id})),
+    ...Object.values(outfitSelections).flat().map(id=>({t:cnMap[id],k:id}))
+  ].filter(x=>x.t);
+  el.innerHTML = `
+    <div class="selected-summary">
+      <div class="selected-label">📌 已选标签 (${allCN.length})</div>
+      <div class="tag-cloud">${allCN.map(x=>`<span class="tag">${x.t}</span>`).join('')}</div>
+    </div>`;
+}
+
+// ================================================================
+// 复制
+// ================================================================
+function doCopy() {
+  const text = buildPrompt();
+  if (!text) return;
+  // 优先用 Clipboard API（HTTPS），fallback 用 execCommand（HTTP兼容）
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(()=>{
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ 已复制到剪贴板！';
+      btn.style.background = '#10b981';
+      setTimeout(()=>{ btn.textContent = `📋 一键复制提示词 (${totalCount()}项)`; btn.style.background=''; }, 2000);
+    }).catch(()=> fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function totalCount() {
+  return Object.values(selections).reduce((a,b)=>a+(b?.length||0),0)+Object.values(outfitSelections).reduce((a,b)=>a+(b?.length||0),0);
+}
+
+function fallbackCopy(text) {
+  // 创建临时 textarea 实现 HTTP 环境下的复制
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+  document.body.appendChild(ta);
+  ta.select();
+  ta.setSelectionRange(0, text.length);
+  try {
+    const ok = document.execCommand('copy');
+    if (ok) {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ 已复制到剪贴板！';
+      btn.style.background = '#10b981';
+      setTimeout(()=>{ btn.textContent = `📋 一键复制提示词 (${totalCount()}项)`; btn.style.background=''; }, 2000);
+    } else {
+      showCopyModal(text);
+    }
+  } catch(e) {
+    showCopyModal(text);
+  }
+  document.body.removeChild(ta);
+}
+
+function showCopyModal(text) {
+  // 如果连 execCommand 也失败，弹出模态框让用户长按复制
+  const mask = document.createElement('div');
+  mask.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:16px;padding:20px;max-width:90vw;max-height:80vh;overflow:auto;width:400px';
+  box.innerHTML = '<div style="font-size:16px;font-weight:700;margin-bottom:10px">📋 请长按下方文字复制</div><div id="copyModalText" style="font-size:13px;line-height:1.6;background:#f3f4f6;padding:12px;border-radius:10px;white-space:pre-wrap;word-break:break-all;user-select:text;-webkit-user-select:text">'+text.replace(/</g,'&lt;')+'</div><button style="margin-top:14px;width:100%;padding:12px;border-radius:12px;font-size:14px;font-weight:700;background:#f43f5e;color:#fff;border:none;cursor:pointer" onclick="this.closest(\'div\').parentElement.remove()">关闭</button>';
+  mask.appendChild(box);
+  mask.addEventListener('click', (e)=>{ if(e.target===mask) mask.remove(); });
+  document.body.appendChild(mask);
+}
+
+function updateCopyBtn() {
+  const count = totalCount();
+  const btn = document.getElementById('copyBtn');
+  btn.disabled = count === 0;
+  btn.textContent = count > 0 ? `📋 一键复制提示词 (${count}项)` : '📋 一键复制提示词';
+  btn.style.background = '';
+}
+
+// ================================================================
+// 标签切换
+// ================================================================
+function switchTab(id) {
+  activeTab = id;
+  renderTabs();
+  renderContent();
+}
+
+// ================================================================
+// 手风琴
+// ================================================================
+function toggleAccordion(el) {
+  const body = el.nextElementSibling;
+  const wasOpen = body.classList.contains('open');
+  // 关闭所有
+  document.querySelectorAll('.accordion-body').forEach(b=>b.classList.remove('open'));
+  document.querySelectorAll('.accordion-title .ac').forEach(ac=>{ac.textContent='展开 ▾';});
+  if (!wasOpen) {
+    body.classList.add('open');
+    el.querySelector('.ac').textContent = '收起 ▴';
+  }
+}
+
+// ================================================================
+// 启动
+// ================================================================
+renderTemplates();
+init();
+</script>
+</body>
+</html>
