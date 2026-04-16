@@ -157,41 +157,6 @@ body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f9fafb;c
 
 const NEGATIVE = '低俗,暴露,色情,变形,多余手指,面部畸形,多余肢体,水印,文字,logo,模糊,噪点多,比例失调,肤色不均,过曝,欠曝';
 
-// 中文质量词映射（用于生成中文提示词）
-const QUALITY_CN = {
-  '8K ultra HD, extreme detail, razor sharp': '8K超高清，极致细节，锐利清晰',
-  '4K high resolution, sharp clarity': '4K高分辨率，清晰锐利',
-  'cinematic quality, film grain texture, cinematic color grading': '电影级画质，胶片颗粒，电影色调',
-  'photorealistic quality, professional grade': '照片级真实，专业品质',
-  'hyperrealistic, true-to-life rendering, lifelike': '超写实，栩栩如生',
-  'magazine cover quality, editorial print, Vogue style': '杂志封面质感，时尚大片风格',
-  'commercial photography quality, polished luxury ad': '商业广告质感，精致奢华',
-  'no deformation, anatomically correct body': '无畸形，身体比例正确',
-  'proper proportions, natural anatomy, balanced figure': '比例正确，自然解剖，匀称身材',
-  'symmetrical face, balanced features, perfect symmetry': '面部对称，五官平衡',
-  'correct number of fingers, clean hand detail': '手指数量正确，手部细节清晰',
-  'natural skin texture, realistic complexion, healthy glow': '自然皮肤纹理，真实肤色，健康光泽',
-  'high-end, luxury aesthetic, premium quality feel': '高级感，奢华美学，顶级品质',
-  'editorial fashion shoot, Vogue Elle style, premium': '时尚大片，杂志风格，高端品质',
-  'street style fashion, urban chic, Candid street photography': '街拍风格，都市时尚，自然抓拍',
-  'elegant luxury, refined taste, understated opulence': '优雅奢华，精致品味，低调华丽',
-  'daily commute style, workwear chic, office appropriate': '日常通勤风，职场时尚，办公适宜',
-  'oil painting texture, artistic brushstroke, classical art': '油画质感，艺术笔触，古典艺术',
-  'soft focus portrait, dreamy bokeh, ethereal soft': '柔焦人像，梦幻散景，空灵柔和',
-  'strong atmosphere, moody dramatic lighting, cinematic mood': '氛围感强，情绪化光影，电影感',
-  'clean white background, minimal, product shot clean': '干净背景，极简风格，产品级干净',
-  'bokeh background, shallow depth of field, professional portrait': '虚化背景，浅景深，专业人像',
-  'Morandi color palette, muted pastel tones, sophisticated': '莫兰迪色系，柔和色调，精致优雅',
-  'sophisticated gray tones, muted elegance, neutral luxe': '高级灰调，低调优雅，中性奢华',
-  'warm color grade, golden amber tones, cozy inviting': '暖色调，金琥珀色，温馨诱人',
-  'cool color grade, blue undertones, clean modern': '冷色调，蓝色基调，干净现代',
-  'Hong Kong retro tone, 90s film aesthetic, nostalgic cinematic': '港风复古色调，90年代胶片，怀旧电影感',
-  'Japanese airy aesthetic, natural light, clean fresh': '日系清透感，自然光，清新干净',
-  'Korean soft aesthetic, pastel tones, K-drama style': '韩系柔和感，粉彩色调，韩剧风格',
-  'classic black and white, monochrome, timeless editorial': '黑白经典，单色，永恒时尚',
-  'faded vintage, nostalgic film look, old photo aesthetic': '褪色复古，怀旧胶片，老照片质感'
-};
-
 const TABS = [
   {id:'scene',label:'🏙️ 场景',icon:'🏙️',color:'#10b981',light:'#d1fae5'},
   {id:'lighting',label:'💡 光线',icon:'💡',color:'#f59e0b',light:'#fef3c7'},
@@ -785,6 +750,7 @@ function renderContent() {
 function flatMap() {
   const r = {};
   Object.values(BANKS).forEach(b => {
+    // 直接返回 text（中文），不再使用 desc（英文）
     if (b.subs) b.subs.forEach(s => s.items?.forEach(i => { r[i.id] = i.text; }));
     else b.items?.forEach(i => { r[i.id] = i.text; });
   });
@@ -794,13 +760,8 @@ function flatMap() {
 function buildPrompt() {
   const fm = flatMap();
   const parts = [];
-  Object.values(selections).flat().forEach(id => { 
-    if (fm[id]) {
-      // 质量词使用中文映射，其他使用原文
-      const cn = QUALITY_CN[fm[id]];
-      parts.push(cn || fm[id]);
-    }
-  });
+  // 所有维度都使用 text（中文）
+  Object.values(selections).flat().forEach(id => { if (fm[id]) parts.push(fm[id]); });
   Object.values(outfitSelections).flat().forEach(id => { if (fm[id]) parts.push(fm[id]); });
   return parts.join('，');
 }
