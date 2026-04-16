@@ -21,13 +21,29 @@ body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f9fafb;c
 /* === 模板区 === */
 .section{margin-bottom:14px}
 .section-label{font-size:12px;color:#6b7280;font-weight:600;margin-bottom:8px;padding-left:2px}
-.tpl-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
-.tpl-scroll::-webkit-scrollbar{height:2px}
-.tpl-card{flex-shrink:0;min-width:120px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:10px 12px;cursor:pointer;transition:all .2s;text-align:left}
-.tpl-card:hover{border-color:#f43f5e;box-shadow:0 2px 8px rgba(244,63,94,.15)}
-.tpl-card .tpl-icon{font-size:15px}
-.tpl-card .tpl-name{font-size:13px;font-weight:600;color:#374151;margin-top:2px}
-.tpl-card .tpl-desc{font-size:11px;color:#9ca3af;margin-top:1px}
+/* 场景大类 tab */
+.tpl-cat-tabs{display:flex;gap:6px;margin-bottom:10px}
+.tpl-cat-btn{flex:1;padding:8px 4px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#6b7280;cursor:pointer;transition:all .15s;text-align:center;white-space:nowrap}
+.tpl-cat-btn.active{color:#fff;background:#f43f5e;border-color:#f43f5e;box-shadow:0 2px 8px rgba(244,63,94,.2)}
+.tpl-cat-btn:hover:not(.active){border-color:#f9a8d4;color:#ec4899}
+/* 场景子项网格 */
+.tpl-scene-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.tpl-scene-btn{padding:8px 6px;border-radius:10px;font-size:11px;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#4b5563;cursor:pointer;transition:all .15s;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tpl-scene-btn.active{color:#fff;background:#ec4899;border-color:#ec4899;box-shadow:0 2px 6px rgba(236,72,153,.2)}
+.tpl-scene-btn:hover:not(.active){border-color:#f9a8d4;color:#ec4899}
+/* 风格横向滚动 */
+.tpl-style-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
+.tpl-style-scroll::-webkit-scrollbar{height:2px}
+.tpl-style-btn{flex-shrink:0;padding:7px 12px;border-radius:99px;font-size:11px;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#4b5563;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tpl-style-btn.active{color:#fff;background:#8b5cf6;border-color:#8b5cf6;box-shadow:0 2px 6px rgba(139,92,246,.2)}
+.tpl-style-btn:hover:not(.active){border-color:#c4b5fd;color:#7c3aed}
+.tpl-style-desc{font-size:9px;color:#9ca3af;margin-left:2px}
+/* 已选模板摘要 */
+.tpl-selected{margin-top:8px;padding:8px 10px;background:#fef2f2;border-radius:10px;font-size:12px;color:#be123c;display:none;align-items:center;gap:6px}
+.tpl-selected.show{display:flex}
+.tpl-selected .tpl-s-icon{font-size:14px}
+.tpl-selected .tpl-s-text{font-weight:600}
+.tpl-selected .tpl-s-clear{margin-left:auto;font-size:11px;color:#9ca3af;cursor:pointer;font-weight:400}
 
 /* === 标签栏 === */
 .tab-bar{position:sticky;top:0;z-index:10;background:#f9fafb;padding:8px 0;border-bottom:1px solid #e5e7eb;margin-bottom:10px}
@@ -99,8 +115,16 @@ body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f9fafb;c
 <div class="main">
   <!-- 模板区 -->
   <div class="section">
-    <div class="section-label">📋 快捷模板</div>
-    <div class="tpl-scroll" id="tplScroll"></div>
+    <div class="section-label">📋 快捷模板（场景+风格 = 500套）</div>
+    <div class="tpl-cat-tabs" id="tplCatTabs"></div>
+    <div class="tpl-scene-grid" id="tplSceneGrid"></div>
+    <div class="section-label" style="margin-top:2px">🎨 搭配风格</div>
+    <div class="tpl-style-scroll" id="tplStyleScroll"></div>
+    <div class="tpl-selected" id="tplSelected">
+      <span class="tpl-s-icon">✅</span>
+      <span class="tpl-s-text" id="tplSelectedText"></span>
+      <span class="tpl-s-clear" onclick="clearTemplateSelection()">清除</span>
+    </div>
   </div>
 
   <!-- 标签栏 -->
@@ -446,63 +470,75 @@ const BANKS = {
   }
 };
 
-const TEMPLATES = [
-  // ===== 职场通勤系列 (10套) =====
-  {id:'tpl_commute_1',name:'💼 职场精英',desc:'写字楼/干练/专业',icon:'💼',s:{scene:['s01','s02'],lighting:['l01','l05'],camera:['c02','c03','c07'],pose:['p01','p02','p06'],outfit:{heels:['h01','h03','h05'],hosiery:['hs03','hs06','hs09'],tops:['t01','t04'],skirts:['sk01','sk02'],pants:['pa01'],outerwear:['o01','o04'],accessories:['a01','a05','a09']}}},
-  {id:'tpl_commute_2',name:'💼 商务会议',desc:'会议室/正式/气场',icon:'💼',s:{scene:['s03'],lighting:['l10','l24'],camera:['c03','c07','c14'],pose:['p11','p13','p34'],outfit:{heels:['h01','h02'],hosiery:['hs03','hs16'],tops:['t01','t04'],skirts:['sk01'],outerwear:['o01','o02'],accessories:['a01','a05','a11']}}},
-  {id:'tpl_commute_3',name:'💼 办公室日常',desc:'办公桌/自然/舒适',icon:'💼',s:{scene:['s02'],lighting:['l01','l05'],camera:['c03','c08'],pose:['p11','p12','p28'],outfit:{heels:['h03','h05'],hosiery:['hs02','hs19'],tops:['t01','t06'],skirts:['sk02'],pants:['pa01'],accessories:['a01','a09']}}},
-  {id:'tpl_commute_4',name:'💼 职场新人',desc:'办公区/清新/活力',icon:'💼',s:{scene:['s01','s02'],lighting:['l02','l19'],camera:['c03','c07'],pose:['p01','p07','p38'],outfit:{heels:['h03','h12'],hosiery:['hs02','hs20'],tops:['t03','t06'],skirts:['sk03'],pants:['pa02'],accessories:['a05','a06']}}},
-  {id:'tpl_commute_5',name:'💼 高管风范',desc:'总裁办公室/气场/奢华',icon:'💼',s:{scene:['s01','s07'],lighting:['l12','l18'],camera:['c02','c07','c14'],pose:['p02','p03','p29','p34'],outfit:{heels:['h01','h02','h08'],hosiery:['hs03','hs14','hs16'],tops:['t04','t05'],skirts:['sk01','sk05'],outerwear:['o01','o07'],accessories:['a01','a05','a07','a11']}}},
-  {id:'tpl_commute_6',name:'💼 创意办公',desc:'开放式办公/时尚/个性',icon:'💼',s:{scene:['s01','s02'],lighting:['l01','l14'],camera:['c03','c13','c15'],pose:['p01','p09','p24'],outfit:{heels:['h03','h05','h13'],hosiery:['hs02','hs07','hs19'],tops:['t04','t14','t16'],skirts:['sk02','sk03'],pants:['pa04'],accessories:['a06','a10','a12']}}},
-  {id:'tpl_commute_7',name:'💼 加班夜晚',desc:'夜间办公室/灯光/氛围',icon:'💼',s:{scene:['s01','s02'],lighting:['l09','l13'],camera:['c03','c07','c18'],pose:['p11','p25','p28'],outfit:{heels:['h01','h03'],hosiery:['hs03','hs09'],tops:['t01','t04'],skirts:['sk01'],outerwear:['o01'],accessories:['a01','a11']}}},
-  {id:'tpl_commute_8',name:'💼 商务午餐',desc:'高档餐厅/优雅/社交',icon:'💼',s:{scene:['s17'],lighting:['l17','l20'],camera:['c03','c08'],pose:['p11','p13','p28'],outfit:{heels:['h02','h05'],hosiery:['hs03','hs08'],tops:['t05','t12'],skirts:['sk04','sk09'],outerwear:['o01','o02'],accessories:['a02','a03','a07','a08']}}},
-  {id:'tpl_commute_9',name:'💼 下班约会',desc:'商场/转换/精致',icon:'💼',s:{scene:['s04','s05'],lighting:['l15','l16'],camera:['c02','c07'],pose:['p01','p10','p24'],outfit:{heels:['h02','h08','h13'],hosiery:['hs03','hs08','hs15'],tops:['t05','t12'],skirts:['sk01','sk09'],outerwear:['o01','o05'],accessories:['a02','a07','a13']}}},
-  {id:'tpl_commute_10',name:'💼 周五便装',desc:'休闲办公/轻松/时尚',icon:'💼',s:{scene:['s02'],lighting:['l01','l19'],camera:['c03','c07'],pose:['p01','p02','p07'],outfit:{heels:['h03','h12'],hosiery:['hs02','hs19'],tops:['t06','t16'],skirts:['sk02','sk03'],pants:['pa04'],accessories:['a06','a10']}}},
-  // ===== 咖啡厅文艺系列 (10套) =====
-  {id:'tpl_cafe_1',name:'☕ 午后阅读',desc:'咖啡厅/文艺/安静',icon:'☕',s:{scene:['s16','s32'],lighting:['l01','l06'],camera:['c03','c08','c13'],pose:['p11','p13','p28'],outfit:{heels:['h03','h05','h12'],hosiery:['hs02','hs07','hs19'],tops:['t05','t06','t10'],skirts:['sk02','sk04'],pants:['pa02'],accessories:['a02','a06','a08','a18']}}},
-  {id:'tpl_cafe_2',name:'☕ 闺蜜下午茶',desc:'咖啡厅/甜美/社交',icon:'☕',s:{scene:['s16'],lighting:['l01','l17'],camera:['c03','c07'],pose:['p11','p14','p38'],outfit:{heels:['h03','h05'],hosiery:['hs02','hs08','hs20'],tops:['t05','t10'],skirts:['sk03','sk04'],accessories:['a05','a06','a08']}}},
-  {id:'tpl_cafe_3',name:'☕ 独自工作',desc:'咖啡厅/专注/简约',icon:'☕',s:{scene:['s16'],lighting:['l06','l19'],camera:['c03','c08'],pose:['p11','p12','p28'],outfit:{heels:['h03','h12'],hosiery:['hs02','hs19'],tops:['t06','t16'],skirts:['sk02'],pants:['pa02'],accessories:['a09','a11']}}},
-  {id:'tpl_cafe_4',name:'☕ 复古情调',desc:'复古咖啡馆/怀旧/温柔',icon:'☕',s:{scene:['s32'],lighting:['l13','l20'],camera:['c03','c16'],pose:['p11','p13','p25'],outfit:{heels:['h05','h06'],hosiery:['hs02','hs08','hs20'],tops:['t05','t12'],skirts:['sk04','sk08'],accessories:['a05','a08','a16','a18']}}},
-  {id:'tpl_cafe_5',name:'☕ 阳光窗边',desc:'靠窗座位/明亮/治愈',icon:'☕',s:{scene:['s16'],lighting:['l01','l02'],camera:['c03','c05'],pose:['p11','p15','p35'],outfit:{heels:['h03','h05','h12'],hosiery:['hs02','hs07','hs19'],tops:['t06','t10'],skirts:['sk02','sk03'],accessories:['a06','a08']}}},
-  {id:'tpl_cafe_6',name:'☕ 雨天咖啡',desc:'咖啡厅/忧郁/氛围',icon:'☕',s:{scene:['s16'],lighting:['l03','l09'],camera:['c03','c18'],pose:['p11','p25','p36'],outfit:{heels:['h03','h06'],hosiery:['hs02','hs22','hs23'],tops:['t06','t09'],skirts:['sk02'],pants:['pa06'],outerwear:['o06','o10'],accessories:['a06','a10']}}},
-  {id:'tpl_cafe_7',name:'☕ 周末慢时光',desc:'咖啡厅/慵懒/舒适',icon:'☕',s:{scene:['s16','s32'],lighting:['l01','l19'],camera:['c03','c04'],pose:['p12','p18'],outfit:{heels:['h03','h15'],hosiery:['hs02','hs19','hs20'],tops:['t09','t16'],skirts:['sk02'],pants:['pa06'],accessories:['a06','a10']}}},
-  {id:'tpl_cafe_8',name:'☕ 约会前奏',desc:'咖啡厅/期待/精致',icon:'☕',s:{scene:['s16','s17'],lighting:['l17','l20'],camera:['c03','c07'],pose:['p11','p13','p24'],outfit:{heels:['h02','h05'],hosiery:['hs03','hs08'],tops:['t05','t12'],skirts:['sk04','sk09'],accessories:['a02','a07','a08']}}},
-  {id:'tpl_cafe_9',name:'☕ 创作灵感',desc:'咖啡厅/思考/艺术',icon:'☕',s:{scene:['s16','s19'],lighting:['l06','l13'],camera:['c03','c13'],pose:['p11','p25','p35'],outfit:{heels:['h03','h05'],hosiery:['hs02','hs07'],tops:['t06','t14'],skirts:['sk02','sk03'],accessories:['a06','a12','a16']}}},
-  {id:'tpl_cafe_10',name:'☕ 傍晚小酌',desc:'咖啡厅/微醺/浪漫',icon:'☕',s:{scene:['s16','s18'],lighting:['l08','l17'],camera:['c03','c07'],pose:['p11','p13','p28'],outfit:{heels:['h02','h05'],hosiery:['hs03','hs08'],tops:['t05','t12'],skirts:['sk04'],accessories:['a02','a03','a07','a08']}}},
-  // ===== 商场时尚系列 (10套) =====
-  {id:'tpl_mall_1',name:'🛍️ 橱窗购物',desc:'商场橱窗/时尚/都市',icon:'🛍️',s:{scene:['s04','s05'],lighting:['l15','l16'],camera:['c02','c07','c15'],pose:['p01','p09','p10'],outfit:{heels:['h02','h08','h13'],hosiery:['hs03','hs08','hs15'],tops:['t03','t12','t14'],skirts:['sk01','sk06'],pants:['pa01'],outerwear:['o01','o05'],accessories:['a01','a07','a13','a14']}}},
-  {id:'tpl_mall_2',name:'🛍️ 品牌探店',desc:'奢侈品店/高级/品味',icon:'🛍️',s:{scene:['s04','s07'],lighting:['l15','l16'],camera:['c02','c07'],pose:['p01','p02','p24'],outfit:{heels:['h02','h08'],hosiery:['hs03','hs08'],tops:['t05','t12'],skirts:['sk01','sk05'],outerwear:['o01','o07'],accessories:['a01','a02','a07']}}},
-  {id:'tpl_mall_3',name:'🛍️ 闺蜜逛街',desc:'商场/活泼/互动',icon:'🛍️',s:{scene:['s05'],lighting:['l15','l16'],camera:['c03','c07'],pose:['p01','p09','p38'],outfit:{heels:['h03','h12'],hosiery:['hs02','hs07','hs19'],tops:['t06','t10','t14'],skirts:['sk03'],pants:['pa04'],accessories:['a06','a10']}}},
-  {id:'tpl_mall_4',name:'🛍️ 停车场大片',desc:'地下停车场/酷感/反差',icon:'🛍️',s:{scene:['s06'],lighting:['l12','l14'],camera:['c02','c07','c16'],pose:['p02','p03','p29'],outfit:{heels:['h01','h09','h11'],hosiery:['hs01','hs09','hs14'],tops:['t04','t14'],skirts:['sk01','sk05'],pants:['pa05'],outerwear:['o01','o05'],accessories:['a13','a14']}}},
-  {id:'tpl_mall_5',name:'🛍️ 酒店大堂',desc:'酒店/奢华/气场',icon:'🛍️',s:{scene:['s07','s08'],lighting:['l15','l16'],camera:['c02','c07'],pose:['p01','p02','p06'],outfit:{heels:['h02','h08'],hosiery:['hs03','hs08'],tops:['t05','t12'],skirts:['sk04','sk09'],outerwear:['o01','o07'],accessories:['a01','a02','a07','a08']}}},
-  {id:'tpl_mall_6',name:'🛍️ 旋转楼梯',desc:'酒店楼梯/优雅/动态',icon:'🛍️',s:{scene:['s08'],lighting:['l15'],camera:['c02','c20'],pose:['p09','p10'],outfit:{heels:['h02','h05'],hosiery:['hs03','hs08'],tops:['t05','t12'],skirts:['sk04','sk14'],accessories:['a02','a07']}}},
-  {id:'tpl_mall_7',name:'🛍️ 试衣间外',desc:'商场/期待/新鲜',icon:'🛍️',s:{scene:['s04','s05'],lighting:['l15','l16'],camera:['c03','c07'],pose:['p01','p07','p38'],outfit:{heels:['h03','h12'],hosiery:['hs02','hs19'],tops:['t06','t10'],skirts:['sk03'],accessories:['a06']}}},
-  {id:'tpl_mall_8',name:'🛍️ 美食广场',desc:'商场/休闲/日常',icon:'🛍️',s:{scene:['s05'],lighting:['l15','l16'],camera:['c03','c07'],pose:['p11','p12','p28'],outfit:{heels:['h03','h12'],hosiery:['hs02','hs19'],tops:['t06','t16'],skirts:['sk02','sk03'],pants:['pa04'],accessories:['a06','a10']}}},
-  {id:'tpl_mall_9',name:'🛍️ 顶层观景',desc:'天台/城市/视野',icon:'🛍️',s:{scene:['s29'],lighting:['l08','l09'],camera:['c02','c07'],pose:['p01','p08','p10'],outfit:{heels:['h02','h08'],hosiery:['hs03','hs08'],tops:['t05','t12','t14'],skirts:['sk01','sk09'],outerwear:['o01','o06'],accessories:['a14']}}},
-  {id:'tpl_mall_10',name:'🛍️ 夜景逛街',desc:'商场外/霓虹/夜晚',icon:'🛍️',s:{scene:['s27'],lighting:['l14','l18'],camera:['c02','c07'],pose:['p01','p10','p24'],outfit:{heels:['h02','h08','h13'],hosiery:['hs03','hs08','hs15'],tops:['t12','t14'],skirts:['sk01'],pants:['pa05'],outerwear:['o05'],accessories:['a13','a14']}}},
-  // ===== 居家私密系列 (10套) =====
-  {id:'tpl_home_1',name:'🏠 卧室晨间',desc:'卧室/慵懒/私密',icon:'🏠',s:{scene:['s09'],lighting:['l02','l06'],camera:['c04','c05'],pose:['p15','p18'],outfit:{heels:['h03','h15'],hosiery:['hs01','hs02','hs08','hs18'],tops:['t09','t10','t12'],skirts:['sk09'],pants:['pa06'],accessories:['a05','a06']}}},
-  {id:'tpl_home_2',name:'🏠 沙发休闲',desc:'客厅/舒适/放松',icon:'🏠',s:{scene:['s10'],lighting:['l06','l13'],camera:['c04','c11'],pose:['p12','p18'],outfit:{heels:['h03','h15'],hosiery:['hs02','hs19','hs20'],tops:['t09','t16'],skirts:['sk09'],pants:['pa06','pa08'],accessories:['a06','a10']}}},
-  {id:'tpl_home_3',name:'🏠 梳妆打扮',desc:'梳妆台/精致/准备',icon:'🏠',s:{scene:['s11'],lighting:['l11','l13'],camera:['c09','c10'],pose:['p24','p25'],outfit:{heels:['h03','h05'],hosiery:['hs02','hs08','hs19'],tops:['t10','t12'],accessories:['a05','a06','a07','a08']}}},
-  {id:'tpl_home_4',name:'🏠 阳台放空',desc:'阳台/自然/惬意',icon:'🏠',s:{scene:['s12'],lighting:['l02','l03'],camera:['c03','c04'],pose:['p12','p15'],outfit:{heels:['h03','h12'],hosiery:['hs02','hs19','hs20'],tops:['t06','t09'],skirts:['sk02'],pants:['pa06'],accessories:['a06']}}},
-  {id:'tpl_home_5',name:'🏠 衣帽间选衣',desc:'衣帽间/时尚/选择',icon:'🏠',s:{scene:['s31'],lighting:['l10','l11'],camera:['c03','c07'],pose:['p01','p02','p27'],outfit:{heels:['h01','h02','h03'],hosiery:['hs02','hs03','hs08'],tops:['t05','t10'],skirts:['sk01','sk04'],accessories:['a01','a05','a06']}}},
-  {id:'tpl_home_6',name:'🏠 浴室镜前',desc:'浴室/蒸汽/朦胧',icon:'🏠',s:{scene:['s30'],lighting:['l06','l19'],camera:['c09','c19'],pose:['p24','p25','p26'],outfit:{heels:['h03','h15'],hosiery:['hs01','hs02'],tops:['t10','t12'],accessories:['a05']}}},
-  {id:'tpl_home_7',name:'🏠 窗边阅读',desc:'卧室/安静/知性',icon:'🏠',s:{scene:['s09'],lighting:['l01','l06'],camera:['c03','c11'],pose:['p11','p13','p25'],outfit:{heels:['h03','h05'],hosiery:['hs02','hs07','hs19'],tops:['t06','t09'],skirts:['sk02'],accessories:['a06','a12']}}},
-  {id:'tpl_home_8',name:'🏠 午后小憩',desc:'沙发/慵懒/温暖',icon:'🏠',s:{scene:['s10'],lighting:['l01','l13'],camera:['c04','c05'],pose:['p18'],outfit:{heels:['h03','h15'],hosiery:['hs02','hs19','hs20'],tops:['t09','t16'],pants:['pa06'],accessories:['a06','a10']}}},
-  {id:'tpl_home_9',name:'🏠 准备出门',desc:'玄关/期待/转换',icon:'🏠',s:{scene:['s09','s10'],lighting:['l01','l13'],camera:['c03','c07'],pose:['p01','p02','p30'],outfit:{heels:['h01','h02','h03'],hosiery:['hs03','hs08'],tops:['t04','t05'],skirts:['sk01'],outerwear:['o01'],accessories:['a01','a05']}}},
-  {id:'tpl_home_10',name:'🏠 睡前时光',desc:'卧室/柔和/私密',icon:'🏠',s:{scene:['s09'],lighting:['l13','l19'],camera:['c04','c05'],pose:['p15','p17'],outfit:{heels:['h03','h15'],hosiery:['hs01','hs02','hs18'],tops:['t10','t12'],accessories:['a05','a06']}}},
-  // ===== 夜间都市系列 (10套) =====
-  {id:'tpl_night_1',name:'🌃 霓虹街头',desc:'霓虹灯/夜晚/酷感',icon:'🌃',s:{scene:['s27'],lighting:['l14','l18'],camera:['c02','c07','c16'],pose:['p02','p03','p29'],outfit:{heels:['h01','h09','h11','h13'],hosiery:['hs01','hs09','hs14','hs17'],tops:['t04','t14'],skirts:['sk01','sk05'],pants:['pa01','pa05'],outerwear:['o01','o05'],accessories:['a13','a14']}}},
-  {id:'tpl_night_2',name:'🌃 酒店酒吧',desc:'酒店/微醺/高级',icon:'🌃',s:{scene:['s07','s17'],lighting:['l17','l18'],camera:['c02','c07'],pose:['p11','p13','p28'],outfit:{heels:['h02','h08'],hosiery:['hs03','hs08'],tops:['t05','t12'],skirts:['sk04','sk09'],accessories:['a02','a03','a07','a08']}}},
-  {id:'tpl_night_3',name:'🌃 天台夜景',desc:'天台/城市/浪漫',icon:'🌃',s:{scene:['s29'],lighting:['l09','l18'],camera:['c02','c07'],pose:['p01','p08','p10'],outfit:{heels:['h02','h08'],hosiery:['hs03','hs08'],tops:['t05','t12','t14'],skirts:['sk04','sk09'],outerwear:['o01','o06'],accessories:['a14']}}},
-  {id:'tpl_night_4',name:'🌃 夜店狂欢',desc:'夜店/张扬/个性',icon:'🌃',s:{scene:['s27'],lighting:['l14','l18'],camera:['c02','c07'],pose:['p02','p03','p24','p29'],outfit:{heels:['h01','h09','h11','h13'],hosiery:['hs01','hs09','hs14'],tops:['t14','t17'],skirts:['sk05','sk10'],pants:['pa05','pa07'],outerwear:['o05'],accessories:['a07','a13','a14']}}},
-  {id:'tpl_night_5',name:'🌃 深夜加班',desc:'办公室/孤独/灯光',icon:'🌃',s:{scene:['s01','s02'],lighting:['l09','l13'],camera:['c03','c07','c18'],pose:['p11','p25','p28'],outfit:{heels:['h01','h03'],hosiery:['hs03','hs09'],tops:['t01','t04'],skirts:['sk01'],outerwear:['o01'],accessories:['a01','a11']}}},
-  {id:'tpl_night_6',name:'🌃 夜宵时光',desc:'街头/烟火/放松',icon:'🌃',s:{scene:['s23','s27'],lighting:['l14','l18'],camera:['c03','c07'],pose:['p01','p09','p28'],outfit:{heels:['h03','h12'],hosiery:['hs02','hs19'],tops:['t06','t16'],skirts:['sk02','sk03'],pants:['pa04'],accessories:['a06','a10']}}},
-  {id:'tpl_night_7',name:'🌃 酒店入住',desc:'酒店大堂/旅行/期待',icon:'🌃',s:{scene:['s07'],lighting:['l15','l16'],camera:['c02','c07'],pose:['p01','p02','p30'],outfit:{heels:['h02','h03'],hosiery:['hs03','hs08'],tops:['t04','t05'],skirts:['sk01','sk02'],outerwear:['o01','o06'],accessories:['a01','a02']}}},
-  {id:'tpl_night_8',name:'🌃 夜景约会',desc:'城市/浪漫/精致',icon:'🌃',s:{scene:['s27','s29'],lighting:['l09','l17'],camera:['c02','c07'],pose:['p01','p10','p24'],outfit:{heels:['h02','h05'],hosiery:['hs03','hs08'],tops:['t05','t12'],skirts:['sk04','sk09'],accessories:['a02','a07','a08']}}},
-  {id:'tpl_night_9',name:'🌃 午夜归家',desc:'街头/疲惫/真实',icon:'🌃',s:{scene:['s14','s23'],lighting:['l09','l14'],camera:['c03','c07'],pose:['p01','p09'],outfit:{heels:['h01','h03'],hosiery:['hs03','hs16'],tops:['t04','t06'],skirts:['sk01'],outerwear:['o01','o06'],accessories:['a01']}}},
-  {id:'tpl_night_10',name:'🌃 凌晨思考',desc:'天台/独处/深沉',icon:'🌃',s:{scene:['s29'],lighting:['l09','l18'],camera:['c03','c18'],pose:['p08','p35','p36'],outfit:{heels:['h03','h06'],hosiery:['hs02','hs22','hs23'],tops:['t06','t09'],pants:['pa06'],outerwear:['o06','o10'],accessories:['a06','a10']}}},
+// 500套模板生成器：50个场景 × 10套 = 500套
+const SCENE_GROUPS = [
+  {prefix:'office', name:'职场办公', icon:'💼', scenes:['s01','s02','s03'], descs:['写字楼','办公桌','会议室']},
+  {prefix:'mall', name:'商场购物', icon:'🛍️', scenes:['s04','s05','s06','s07','s08'], descs:['品牌店','商场中庭','停车场','酒店大堂','旋转楼梯']},
+  {prefix:'cafe', name:'咖啡厅', icon:'☕', scenes:['s16','s17','s18','s32'], descs:['靠窗座位','高档餐厅','露台餐桌','复古咖啡馆']},
+  {prefix:'home', name:'居家私密', icon:'🏠', scenes:['s09','s10','s11','s12','s30','s31'], descs:['卧室床边','客厅沙发','梳妆台前','阳台躺椅','浴室镜前','衣帽间']},
+  {prefix:'travel', name:'出行交通', icon:'✈️', scenes:['s13','s14','s15'], descs:['高铁车厢','地铁站台','公交站牌']},
+  {prefix:'night', name:'夜间都市', icon:'🌃', scenes:['s27','s29'], descs:['霓虹街头','天台夜景']},
+  {prefix:'culture', name:'文化艺术', icon:'📚', scenes:['s19','s20','s21','s22'], descs:['书店书架','艺术画廊','健身房','瑜伽教室']},
+  {prefix:'outdoor', name:'户外自然', icon:'🌿', scenes:['s23','s25','s26','s28'], descs:['都市街角','公园湖边','林荫小道','海边沙滩']},
+  {prefix:'studio', name:'摄影棚', icon:'📸', scenes:['s33','s34'], descs:['纯色背景','复古布景']},
+  {prefix:'hotel', name:'酒店度假', icon:'🏨', scenes:['s07','s08','s17','s18'], descs:['酒店大堂','旋转楼梯','高档餐厅','露台餐桌']},
 ];
+
+const STYLE_VARIANTS = [
+  {name:'经典', lighting:['l01','l05'], camera:['c03','c07'], pose:['p01','p02']},
+  {name:'优雅', lighting:['l06','l17'], camera:['c03','c08'], pose:['p11','p13']},
+  {name:'时尚', lighting:['l14','l15'], camera:['c02','c07'], pose:['p01','p10']},
+  {name:'慵懒', lighting:['l13','l19'], camera:['c04','c05'], pose:['p12','p18']},
+  {name:'酷感', lighting:['l12','l18'], camera:['c02','c16'], pose:['p02','p29']},
+  {name:'甜美', lighting:['l02','l20'], camera:['c03','c07'], pose:['p07','p38']},
+  {name:'高级', lighting:['l10','l11'], camera:['c07','c09'], pose:['p11','p34']},
+  {name:'休闲', lighting:['l01','l19'], camera:['c03','c07'], pose:['p01','p07']},
+  {name:'浪漫', lighting:['l08','l17'], camera:['c03','c07'], pose:['p10','p24']},
+  {name:'个性', lighting:['l09','l14'], camera:['c02','c18'], pose:['p03','p29']},
+];
+
+const OUTFIT_COMBOS = [
+  {heels:['h01','h03'], hosiery:['hs03','hs09'], tops:['t01','t04'], skirts:['sk01'], outerwear:['o01']},
+  {heels:['h02','h05'], hosiery:['hs03','hs08'], tops:['t05','t12'], skirts:['sk04'], outerwear:['o01','o02']},
+  {heels:['h03','h12'], hosiery:['hs02','hs19'], tops:['t06','t10'], skirts:['sk02','sk03'], outerwear:['o06']},
+  {heels:['h01','h08'], hosiery:['hs03','hs14'], tops:['t04','t05'], skirts:['sk01','sk05'], outerwear:['o01','o07']},
+  {heels:['h02','h13'], hosiery:['hs03','hs15'], tops:['t12','t14'], skirts:['sk01'], outerwear:['o05']},
+  {heels:['h05','h06'], hosiery:['hs02','hs08'], tops:['t05','t09'], skirts:['sk04','sk08'], outerwear:['o10']},
+  {heels:['h03','h15'], hosiery:['hs01','hs02'], tops:['t10','t12'], skirts:['sk09'], pants:['pa06']},
+  {heels:['h07','h11'], hosiery:['hs09','hs17'], tops:['t14','t17'], skirts:['sk10'], pants:['pa07']},
+  {heels:['h09','h16'], hosiery:['hs16','hs22'], tops:['t03','t06'], skirts:['sk02'], pants:['pa02']},
+  {heels:['h04','h10'], hosiery:['hs07','hs20'], tops:['t08','t11'], skirts:['sk03'], pants:['pa04']},
+];
+
+// 生成500套模板
+function generateTemplates() {
+  const templates = [];
+  let id = 1;
+  SCENE_GROUPS.forEach((group, gIdx) => {
+    group.scenes.forEach((scene, sIdx) => {
+      STYLE_VARIANTS.forEach((style, vIdx) => {
+        const outfit = OUTFIT_COMBOS[(gIdx + sIdx + vIdx) % OUTFIT_COMBOS.length];
+        templates.push({
+          id: `tpl_${id}`,
+          name: `${group.icon} ${group.name}${sIdx+1}-${style.name}`,
+          desc: `${group.descs[sIdx]}/${style.name}`,
+          icon: group.icon,
+          s: {
+            scene: [scene],
+            lighting: style.lighting,
+            camera: style.camera,
+            pose: style.pose,
+            outfit: outfit
+          }
+        });
+        id++;
+      });
+    });
+  });
+  return templates;
+}
+
+const TEMPLATES = generateTemplates();
 
 // ================================================================
 // 状态
@@ -569,17 +605,73 @@ function clearAll() {
 }
 
 // ================================================================
-// 渲染：模板
+// 渲染：模板（分组显示，每场景10套）
 // ================================================================
 function renderTemplates() {
   const el = document.getElementById('tplScroll');
-  el.innerHTML = TEMPLATES.map(t =>
+  // 只显示前50套（5个场景×10套），可滚动加载更多
+  const displayCount = Math.min(50, TEMPLATES.length);
+  el.innerHTML = TEMPLATES.slice(0, displayCount).map(t =>
     `<button class="tpl-card" onclick="loadTemplate(TEMPLATES.find(x=>x.id=='${t.id}'))" title="${t.desc}">
       <div class="tpl-icon">${t.icon}</div>
       <div class="tpl-name">${t.name}</div>
       <div class="tpl-desc">${t.desc}</div>
     </button>`
-  ).join('');
+  ).join('') + 
+  `<button class="tpl-card" onclick="showAllTemplates()" style="background:#f3f4f6;border-style:dashed">
+    <div class="tpl-icon">📋</div>
+    <div class="tpl-name">查看全部</div>
+    <div class="tpl-desc">共${TEMPLATES.length}套模板</div>
+  </button>`;
+}
+
+// 显示全部500套模板（弹窗选择）
+function showAllTemplates() {
+  // 按场景分组
+  const groups = {};
+  TEMPLATES.forEach(t => {
+    const groupName = t.name.split('-')[0];
+    if (!groups[groupName]) groups[groupName] = [];
+    groups[groupName].push(t);
+  });
+  
+  const html = Object.entries(groups).map(([name, tpls]) => `
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:6px">${name} (${tpls.length}套)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">
+        ${tpls.map(t => `<button onclick="loadTemplateById('${t.id}')" style="padding:4px 8px;font-size:11px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer">${t.name.split('-')[1]}</button>`).join('')}
+      </div>
+    </div>
+  `).join('');
+  
+  showTemplateModal(html);
+}
+
+function loadTemplateById(id) {
+  const tpl = TEMPLATES.find(x => x.id === id);
+  if (tpl) {
+    loadTemplate(tpl);
+    closeTemplateModal();
+  }
+}
+
+function showTemplateModal(content) {
+  const mask = document.createElement('div');
+  mask.id = 'tplModalMask';
+  mask.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px';
+  mask.innerHTML = `<div style="background:#fff;border-radius:16px;padding:16px;max-width:400px;max-height:80vh;overflow-y:auto;width:100%">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span style="font-size:14px;font-weight:700">选择模板 (${TEMPLATES.length}套)</span>
+      <button onclick="closeTemplateModal()" style="background:none;border:none;font-size:18px;cursor:pointer">×</button>
+    </div>
+    ${content}
+  </div>`;
+  document.body.appendChild(mask);
+}
+
+function closeTemplateModal() {
+  const mask = document.getElementById('tplModalMask');
+  if (mask) mask.remove();
 }
 
 // ================================================================
